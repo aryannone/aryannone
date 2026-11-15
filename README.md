@@ -27,6 +27,7 @@ Everything you'll want to change is in **`src/content.js`**:
 
 - `profile`: your name, tagline, status badge, email, socials, résumé and photo
 - `projects[].image`: optional screenshot for each project card
+- `story`: the photo storyline (year, title, text, photo). Put photos in `public/story/` and set `photo: '/story/1.jpg'`
 - `avatar`: what your 3D student looks like (skin, hair, glasses, clothes, height…)
 - `about`, `projects`, `education`, `skills`, `achievements`, `hobbies`, `contact`
 

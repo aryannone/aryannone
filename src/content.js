@@ -57,6 +57,20 @@ export const about = {
   ],
 };
 
+// ---------------------------------------------------------------------
+//  MY STORY - a scroll-driven photo storyline on the classic page.
+//  Each chapter shows one photo. Put photos in /public (e.g.
+//  /public/story/1.jpg) and set photo: '/story/1.jpg'. Leave photo
+//  empty to show a placeholder frame.
+// ---------------------------------------------------------------------
+export const story = [
+  { year: '2006', title: 'Where it all began', text: 'Placeholder: where you grew up and the first thing that made you curious.', photo: '' }, // TODO
+  { year: '2015', title: 'The first computer', text: 'Placeholder: the moment you first got hooked on computers, games or building things.', photo: '' }, // TODO
+  { year: '2020', title: 'Hello, World', text: 'Placeholder: your first line of code, first project or first late night debugging.', photo: '' }, // TODO
+  { year: '2024', title: 'College life', text: 'Placeholder: joining college, clubs, friends and what you are studying now.', photo: '' }, // TODO
+  { year: 'Next', title: "What's next", text: 'Placeholder: where you are heading: the internship, the product, the dream.', photo: '' }, // TODO
+];
+
 export const projects = [
   {
     title: 'Project One', // TODO

@@ -12,7 +12,7 @@ import { createFX, reduced } from './fx.js';
 
 const p = C.profile;
 const NAV = [
-  ['about', 'About'], ['projects', 'Work'], ['skills', 'Skills'], ['education', 'Education'],
+  ['about', 'About'], ['story', 'Story'], ['projects', 'Work'], ['skills', 'Skills'], ['education', 'Education'],
   ['achievements', 'Wins'], ['contact', 'Contact'],
 ];
 const ICON = {
@@ -20,6 +20,7 @@ const ICON = {
   moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>',
   arrow: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>',
   down: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  camera: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2l1.4-2h5.8l1.4 2h1.2A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5Z"/><circle cx="12" cy="13" r="3.6"/></svg>',
   copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
 };
 
@@ -56,6 +57,51 @@ function projectArt(pr, i) {
         </div>
       </div>
     </div>`;
+}
+
+function storyHTML() {
+  const ch = C.story || [];
+  if (!ch.length) return '';
+  const n = ch.length;
+  return `
+    <section class="story" id="story" style="--n:${n}">
+      <div class="story-sticky">
+        <div class="container story-head">
+          <p class="sec-kicker"><span>02</span>My story</p>
+          <p class="story-count" aria-hidden="true"><b>01</b> / ${String(n).padStart(2, '0')}</p>
+        </div>
+        <div class="container story-grid">
+          ${ch
+            .map(
+              (c, i) => `
+            <div class="chapter${i ? '' : ' on'}" style="--i:${i}">
+              <div class="chapter-text">
+                <span class="chapter-year">${esc(c.year)}</span>
+                <h3>${esc(c.title)}</h3>
+                <p>${esc(c.text)}</p>
+              </div>
+              <figure class="photo" style="--r:${[-3, 2.5, -2, 3, -2.5][i % 5]}deg">
+                <div class="photo-frame">
+                  ${
+                    c.photo
+                      ? `<img src="${esc(c.photo)}" alt="${esc(c.title)}" loading="lazy">`
+                      : `<div class="photo-ph" aria-hidden="true">
+                           <span class="ph-year">${esc(c.year)}</span>
+                           <span class="ph-icon">${ICON.camera}</span>
+                           <b>Photo ${i + 1}</b>
+                           <small>Add it in content.js → story</small>
+                         </div>`
+                  }
+                </div>
+                <figcaption><span>${esc(c.year)}</span>${esc(c.title)}</figcaption>
+              </figure>
+            </div>`
+            )
+            .join('')}
+        </div>
+        <div class="container"><div class="story-steps" aria-hidden="true">${ch.map(() => '<span><i></i></span>').join('')}</div></div>
+      </div>
+    </section>`;
 }
 
 export function renderClassic(root, { onPlay, canPlay }) {
@@ -151,11 +197,14 @@ export function renderClassic(root, { onPlay, canPlay }) {
           </div>
         </section>
 
+        <!-- ============ MY STORY (pinned photo storyline) ============ -->
+        ${storyHTML()}
+
         <!-- ============ PROJECTS (pinned horizontal gallery) ============ -->
         <section class="work" id="projects">
           <div class="work-sticky">
             <div class="container work-head">
-              ${title('Selected work', 'Things I’ve <em>built</em>', '02')}
+              ${title('Selected work', 'Things I’ve <em>built</em>', '03')}
               <p class="work-count" aria-hidden="true"><b>01</b> / ${String(C.projects.length).padStart(2, '0')}</p>
             </div>
             <div class="work-track">
@@ -185,7 +234,7 @@ export function renderClassic(root, { onPlay, canPlay }) {
 
         <!-- ============ SKILLS ============ -->
         <section class="section skills" id="skills">
-          <div class="container">${title('Toolbox', 'Skills & <em>tools</em>', '03')}</div>
+          <div class="container">${title('Toolbox', 'Skills & <em>tools</em>', '04')}</div>
           ${marquee(allSkills.map((s) => s.name), 'skills-marquee')}
           ${marquee(allSkills.map((s) => s.name).reverse(), 'skills-marquee reverse')}
           <div class="container skill-grid">
@@ -206,7 +255,7 @@ export function renderClassic(root, { onPlay, canPlay }) {
         <!-- ============ EDUCATION ============ -->
         <section class="section education" id="education">
           <div class="container">
-            ${title('Journey', 'Education & <em>learning</em>', '04')}
+            ${title('Journey', 'Education & <em>learning</em>', '05')}
             <div class="edu-grid">
               <ol class="timeline">
                 <span class="tl-line" aria-hidden="true"><span></span></span>
@@ -242,7 +291,7 @@ export function renderClassic(root, { onPlay, canPlay }) {
         <!-- ============ ACHIEVEMENTS ============ -->
         <section class="section wins" id="achievements">
           <div class="container">
-            ${title('Highlights', 'Wins & <em>milestones</em>', '05')}
+            ${title('Highlights', 'Wins & <em>milestones</em>', '06')}
             <div class="wins-grid">
               ${C.achievements
                 .map(
@@ -261,7 +310,7 @@ export function renderClassic(root, { onPlay, canPlay }) {
         <!-- ============ HOBBIES ============ -->
         <section class="section hobbies-sec" id="hobbies">
           <div class="container">
-            ${title('Off the clock', 'Hobbies & <em>fun facts</em>', '06')}
+            ${title('Off the clock', 'Hobbies & <em>fun facts</em>', '07')}
             <p class="lead" data-reveal>${esc(C.hobbies.intro)}</p>
             <div class="hobby-cloud">
               ${C.hobbies.items.map((h, i) => `<span class="hobby-chip" data-reveal style="--i:${i}"><span aria-hidden="true">${h.icon}</span>${esc(h.name)}</span>`).join('')}
@@ -276,7 +325,7 @@ export function renderClassic(root, { onPlay, canPlay }) {
         <section class="contact" id="contact">
           ${marquee(["Let's work together", 'Say hello', "Let's build something"], 'big')}
           <div class="container contact-inner">
-            <p class="sec-kicker" data-reveal><span>07</span>Contact</p>
+            <p class="sec-kicker" data-reveal><span>08</span>Contact</p>
             <h2 class="contact-title" data-reveal>Got an idea? <em>Let’s talk.</em></h2>
             <p class="lead" data-reveal>${esc(C.contact.intro)}</p>
             <div class="contact-actions" data-reveal>
@@ -300,6 +349,7 @@ export function renderClassic(root, { onPlay, canPlay }) {
     </div>`;
 
   const page = root.querySelector('.classic');
+  const cleanupFns = [];
   const fx = createFX(page);
   const still = reduced();
   page.querySelectorAll('.play-btn').forEach((b) => b.addEventListener('click', onPlay));
@@ -369,6 +419,57 @@ export function renderClassic(root, { onPlay, canPlay }) {
   const statement = page.querySelector('.statement');
   fx.addScene(statement, (t) => statement.style.setProperty('--p', Math.min(1, t * 1.15).toFixed(4)));
 
+  // my story: pinned photo storyline. Each chapter's photo is revealed
+  // from below with a slow zoom, then pushed back into a tilted stack
+  // as the next one arrives.
+  const story = page.querySelector('.story');
+  if (story) {
+    const chs = [...story.querySelectorAll('.chapter')];
+    const photos = chs.map((c) => c.querySelector('.photo'));
+    const steps = [...story.querySelectorAll('.story-steps i')];
+    const sCount = story.querySelector('.story-count b');
+    const n = chs.length;
+    let pinned = false, active = -1;
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const layoutStory = () => {
+      pinned = !still && innerWidth >= 900;
+      story.classList.toggle('pinned', pinned);
+      story.style.height = pinned ? `${n * 85 + 60}vh` : '';
+      if (!pinned) photos.forEach((ph) => ph.removeAttribute('style'));
+    };
+    layoutStory();
+    fx.on(window, 'resize', layoutStory);
+    fx.addScene(story, (t) => {
+      if (!pinned) return;
+      const f = 0.3 + t * (n - 0.8); // 0.3 .. n - 0.5 (last chapter gets a moment)
+      photos.forEach((ph, i) => {
+        const enter = i === 0 ? 1 : clamp((f - i) / 0.45 + 1);
+        const depth = clamp(f - i - 0.55, 0, 3);
+        const zoom = clamp((f - i + 0.4) / 1.6);
+        ph.style.setProperty('--e', enter.toFixed(3));
+        ph.style.setProperty('--d', depth.toFixed(3));
+        ph.style.setProperty('--z', zoom.toFixed(3));
+      });
+      steps.forEach((s, i) => (s.style.transform = `scaleX(${clamp((f - i + 0.45) / 0.95).toFixed(3)})`));
+      const a = Math.min(n - 1, Math.max(0, Math.floor(f + 0.2)));
+      if (a !== active) {
+        active = a;
+        chs.forEach((c, i) => {
+          c.classList.toggle('on', i === a);
+          c.classList.toggle('past', i < a);
+        });
+        sCount.textContent = String(a + 1).padStart(2, '0');
+      }
+    });
+    // phones / reduced motion: chapters simply reveal as they scroll in
+    const sIO = new IntersectionObserver(
+      (es) => es.forEach((e) => e.isIntersecting && !pinned && e.target.classList.add('in')),
+      { threshold: 0.25 }
+    );
+    chs.forEach((c) => sIO.observe(c));
+    cleanupFns.push(() => sIO.disconnect());
+  }
+
   // projects: vertical scroll -> horizontal movement (wide screens only)
   const work = page.querySelector('.work');
   const track = work.querySelector('.work-track');
@@ -424,6 +525,7 @@ export function renderClassic(root, { onPlay, canPlay }) {
   return () => {
     clearInterval(roleTimer);
     navIO.disconnect();
+    cleanupFns.forEach((f) => f());
     fx.dispose();
   };
 }
