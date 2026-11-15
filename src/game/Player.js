@@ -121,7 +121,7 @@ export class Player {
       new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: 0.18, depthWrite: false })
     );
     blob.rotation.x = -Math.PI / 2;
-    blob.position.y = 0.06;
+    blob.position.y = 0.085;
     scene.add(blob);
     this.blob = blob;
   }
@@ -228,7 +228,7 @@ export class Player {
       this.phase += dt * 2;
       c.animate(dt, this.phase, 'idle');
     }
-    this.blob.position.set(this.pos.x, 0.06, this.pos.z);
+    this.blob.position.set(this.pos.x, 0.085, this.pos.z);
     const s = 1 - Math.min(0.5, this.pos.y * 0.2);
     this.blob.scale.set(s, s, s);
   }

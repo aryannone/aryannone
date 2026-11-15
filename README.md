@@ -25,7 +25,8 @@ npm run dev     # opens a local server, usually http://localhost:5173
 
 Everything you'll want to change is in **`src/content.js`**:
 
-- `profile`: your name, tagline, email, socials, résumé and photo
+- `profile`: your name, tagline, status badge, email, socials, résumé and photo
+- `projects[].image`: optional screenshot for each project card
 - `avatar`: what your 3D student looks like (skin, hair, glasses, clothes, height…)
 - `about`, `projects`, `education`, `skills`, `achievements`, `hobbies`, `contact`
 
@@ -40,8 +41,18 @@ To add a photo or résumé, put the file in the `public/` folder (e.g. `public/r
 | Enter building | `E` (on the glowing ring) | **E** button |
 | Bicycle on/off | `F` | 🚲 button |
 | Jump / Wave | `Space` / `Q` | ⤒ button |
-| Zoom | Mouse wheel | – |
+| Look around | Drag the mouse | Drag the screen |
+| Zoom | Mouse wheel | Pinch |
+| Camera distance / reset | `V` / `R` | 🎥 button |
 | Music on/off | `M` | 🎵 button |
+
+## Mini-games
+
+- ⭐ **Star Rush**: stand on the gold pad north of the fountain and press `E`. Collect 12 stars in 60 seconds.
+- 🏁 **Ring Race**: the teal pad near the gate. Go through the rings around the plaza as fast as you can (the bike helps!).
+- ⚽ **Football**: the ball on the sports ground is always live. Run or ride into it to kick it past the goalkeepers.
+
+Best scores are saved in the browser.
 
 ## Deploy free on Vercel
 
@@ -63,12 +74,15 @@ src/
   ui/
     sections.js     turns content into HTML (shared by both views)
     Classic.js      the classic one-page portfolio
+    fx.js           scroll animations, magnetic buttons, cursor (classic page)
     Panel.js        pop-up panel inside the 3D world
   game/
     Game.js         scene, camera, lights, HUD, main loop
     Campus.js       the island, buildings, paths, trees, fountain…
     Character.js    the cartoon student model + animations
     Player.js       movement, collisions, jumping, the bicycle
+    CameraRig.js    third-person camera: drag to look, zoom, wall avoidance
+    MiniGames.js    Star Rush, Ring Race and football
     NPCs.js         students walking around campus
     Minimap.js      the corner map
     Input.js        keyboard + touch joystick

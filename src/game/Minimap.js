@@ -67,7 +67,7 @@ export class Minimap {
     return c;
   }
 
-  draw(player, npcs, visited) {
+  draw(player, npcs, visited, extras = []) {
     // ~30fps is plenty for a minimap
     if (this.frame++ % 2) return;
     const g = this.ctx;
@@ -96,6 +96,25 @@ export class Minimap {
       g.arc(...this.w2m(n.pos.x, n.pos.z), 2, 0, Math.PI * 2);
       g.fill();
     }
+
+    // mini-game markers: pads, stars, next ring, the football
+    for (const e of extras) {
+      const [x, y] = this.w2m(e.x, e.z);
+      if (e.kind === 'pad') {
+        g.font = '11px sans-serif';
+        g.fillText(e.icon, x, y);
+        continue;
+      }
+      const pulse = 1 + Math.sin(performance.now() / 160) * 0.25;
+      g.fillStyle = { star: '#ffc83d', ring: '#14b8c4', ball: '#ffffff' }[e.kind];
+      g.strokeStyle = '#2b2d42';
+      g.lineWidth = 1.5;
+      g.beginPath();
+      g.arc(x, y, e.kind === 'ball' ? 3 : 4 * pulse, 0, Math.PI * 2);
+      g.fill();
+      g.stroke();
+    }
+    g.fillStyle = '#2b2d42';
 
     if (!player.riding) {
       const [bx, by] = this.w2m(player.bike.pos.x, player.bike.pos.z);

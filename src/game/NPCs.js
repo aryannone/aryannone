@@ -45,7 +45,7 @@ export class NPCs {
         skin: pick(SKIN), hair: pick(HAIR), hairStyle: pick(STYLES), shirt: pick(SHIRT),
         pants: pick(['#2b3044', '#4a5a7a', '#6b4f3a', '#3a3a3a']), shoes: pick(['#fff', '#222', '#e2574c']),
         backpack: Math.random() < 0.6 ? pick(SHIRT) : null, glasses: Math.random() < 0.25,
-        height: 0.9 + Math.random() * 0.15,
+        height: 0.9 + Math.random() * 0.15, outline: !matchMedia('(pointer: coarse)').matches,
       });
       const from = keys[(Math.random() * keys.length) | 0];
       const [x, z] = NAV.nodes[from];
@@ -53,7 +53,7 @@ export class NPCs {
       bubble.scale.set(0.9, 0.9, 1);
       bubble.visible = false;
       ch.root.add(bubble);
-      bubble.position.y = 2.75;
+      bubble.position.y = 2.95;
       scene.add(ch.root);
       // small random offset so they don't walk in single file
       const npc = {

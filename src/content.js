@@ -13,6 +13,7 @@ export const profile = {
   roles: ['Student', 'Developer', 'Problem Solver', 'Lifelong Learner'], // TODO
   tagline: 'I build things for the web, learn something new every day, and love turning ideas into projects.', // TODO
   location: 'Your City, Country', // TODO
+  status: 'Open to internships', // little green badge on the classic page ('' to hide)
   email: 'you@example.com', // TODO
   resumeUrl: '', // TODO: put resume.pdf in /public and write '/resume.pdf'
   photoUrl: '', // TODO: put photo.jpg in /public and write '/photo.jpg'
@@ -61,6 +62,7 @@ export const projects = [
     title: 'Project One', // TODO
     description: 'A short description of what this project does and why it is cool. Mention the problem it solves.',
     tags: ['Python', 'Machine Learning'],
+    image: '', // optional screenshot, e.g. '/project-one.png' in /public
     link: '',
     repo: '',
   },

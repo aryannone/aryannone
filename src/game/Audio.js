@@ -275,6 +275,26 @@ export class AudioEngine {
       case 'click':
         this.pluck(midi(84), t, 0.08, out);
         break;
+      case 'coin':
+        this.pluck(midi(88), t, 0.12, out);
+        this.pluck(midi(95), t + 0.06, 0.12, out);
+        break;
+      case 'ring':
+        [79, 83, 86].forEach((n, i) => this.pluck(midi(n), t + i * 0.05, 0.12, out));
+        break;
+      case 'start':
+        [67, 67, 79].forEach((n, i) => this.pluck(midi(n), t + i * 0.16, 0.14, out));
+        break;
+      case 'fail':
+        [72, 67, 60].forEach((n, i) => this.pluck(midi(n), t + i * 0.14, 0.13, out));
+        break;
+      case 'kick':
+        this.noiseHit(t, 'lowpass', 900, 1.2, 0.35, 0.09, out);
+        break;
+      case 'goal':
+        this.noiseHit(t, 'bandpass', 1400, 0.6, 0.18, 0.9, out);
+        [72, 76, 79, 84, 88].forEach((n, i) => this.pluck(midi(n), t + i * 0.07, 0.15, out));
+        break;
     }
   }
 }

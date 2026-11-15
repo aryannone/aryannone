@@ -7,6 +7,8 @@ import { Player } from './Player.js';
 import { NPCs } from './NPCs.js';
 import { Minimap } from './Minimap.js';
 import { Input } from './Input.js';
+import { CameraRig } from './CameraRig.js';
+import { MiniGames } from './MiniGames.js';
 import { audio } from './Audio.js';
 import { Panel } from '../ui/Panel.js';
 import { SECTIONS } from '../ui/sections.js';
@@ -64,8 +66,8 @@ export class Game {
     sun.castShadow = true;
     sun.shadow.mapSize.set(isTouch ? 1024 : 2048, isTouch ? 1024 : 2048);
     const sc = sun.shadow.camera;
-    sc.left = sc.bottom = -38;
-    sc.right = sc.top = 38;
+    sc.left = sc.bottom = -46;
+    sc.right = sc.top = 46;
     sc.near = 1;
     sc.far = 160;
     sun.shadow.bias = -0.0006;
@@ -87,16 +89,18 @@ export class Game {
     this.npcs = new NPCs(scene, isTouch ? 7 : 11);
     onProgress && onProgress(0.9);
 
-    // ---------- camera (3/4 top-down follow) ----------
-    this.camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.5, 900);
-    this.zoom = this.autoZoom();
-    this.camOffset = new THREE.Vector3(0, 19, 15);
-    this.camTarget = new THREE.Vector3();
-    this.camera.position.copy(this.player.pos).add(this.camOffset).add(new THREE.Vector3(0, 30, 30));
-    this.introT = 0;
+    // ---------- camera (third-person, low behind the player) ----------
+    this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 900);
+    this.rig = new CameraRig(this.camera, renderer.domElement, { portrait: innerWidth / innerHeight < 0.8 });
 
     this.buildHUD();
     this.input = new Input(this.hud);
+    this.games = new MiniGames(scene, {
+      hud: this.hud,
+      trees: this.campus.map.trees,
+      toast: (h, ms) => this.toast(h, ms),
+      confetti: (n) => this.confetti(n),
+    });
     this.bindActions();
 
     this.clock = new THREE.Clock();
@@ -104,25 +108,14 @@ export class Game {
       renderer.setSize(innerWidth, innerHeight);
       this.camera.aspect = innerWidth / innerHeight;
       this.camera.updateProjectionMatrix();
-      this.zoom = this.autoZoom();
+      this.rig.distMul = innerWidth / innerHeight < 0.8 ? 1.25 : 1;
     };
     addEventListener('resize', this.onResize);
-    this.onWheel = (e) => {
-      if (this.panel.isOpen) return;
-      this.zoom = THREE.MathUtils.clamp(this.zoom + Math.sign(e.deltaY) * 0.08, 0.6, 1.8);
-    };
-    renderer.domElement.addEventListener('wheel', this.onWheel, { passive: true });
     this.onVis = () => document.hidden ? audio.ctx?.suspend() : audio.ctx?.resume();
     document.addEventListener('visibilitychange', this.onVis);
 
     this.running = true;
     renderer.setAnimationLoop(() => this.tick());
-  }
-
-  // pull the camera back on narrow / portrait screens so you can see around you
-  autoZoom() {
-    const aspect = innerWidth / innerHeight;
-    return aspect < 0.8 ? 1.65 : aspect < 1.2 ? 1.3 : 1;
   }
 
   // ---------------------------------------------------------------
@@ -142,6 +135,7 @@ export class Game {
         <div class="hud-buttons">
           <button class="icon-btn" data-act="music" aria-label="Toggle music" title="Music (M)"></button>
           <button class="icon-btn" data-act="sfx" aria-label="Toggle sound effects" title="Sound effects"></button>
+          <button class="icon-btn" data-act="cam" aria-label="Change camera distance" title="Camera distance (V)">🎥</button>
           <button class="icon-btn" data-act="help" aria-label="Controls" title="Controls (H)">❓</button>
           <button class="btn btn-small" data-act="exit" title="Switch to the classic page">📄 Classic view</button>
         </div>
@@ -162,9 +156,12 @@ export class Game {
             <li><span>${isTouch ? '<b>E</b> button' : '<kbd>E</kbd>'}</span> Enter a building (stand on the glowing ring)</li>
             <li><span>${isTouch ? '🚲 button' : '<kbd>F</kbd>'}</span> Hop on / off the bicycle</li>
             <li><span>${isTouch ? '⤒ button' : '<kbd>Space</kbd>'}</span> Jump</li>
-            ${isTouch ? '' : '<li><span><kbd>Q</kbd></span> Wave hello 👋</li><li><span>Mouse wheel</span> Zoom</li>'}
+            ${isTouch ? '' : '<li><span><kbd>Q</kbd></span> Wave hello 👋</li>'}
+            <li><span>${isTouch ? 'Drag the screen' : 'Drag the mouse'}</span> Look around</li>
+            <li><span>${isTouch ? 'Pinch' : 'Mouse wheel'}</span> Zoom in / out</li>
+            <li><span>${isTouch ? '🎥 button' : '<kbd>V</kbd> · <kbd>R</kbd>'}</span> ${isTouch ? 'Camera distance' : 'Camera distance · reset'}</li>
           </ul>
-          <p class="muted small">Visit all 7 places to complete the campus tour!</p>
+          <p class="muted small">Visit all 7 places to complete the campus tour! Then try the mini-games: ⭐ Star Rush, 🏁 Ring Race and ⚽ football on the sports ground.</p>
           <button class="btn btn-primary" data-act="help-close">Let's go!</button>
         </div>
       </div>`;
@@ -178,7 +175,7 @@ export class Game {
       onClose: () => {
         audio.sfx('close');
         audio.setMuffled(false);
-        this.input.enabled = true;
+        this.input.enabled = this.rig.enabled = true;
         this.checkComplete();
       },
     });
@@ -194,6 +191,7 @@ export class Game {
     const i = this.input;
     i.on('interact', () => {
       if (this.activeZone) this.enter(this.activeZone.key);
+      else if (this.activePad) this.games.start(this.activePad.key, this.player);
       else if (this.player.nearBike() || this.player.riding) i.fire('bike');
     });
     i.on('bike', () => {
@@ -201,6 +199,8 @@ export class Game {
     });
     i.on('jump', () => this.player.jump() && audio.sfx('jump'));
     i.on('wave', () => this.player.char.wave());
+    i.on('cam', () => this.toast(`🎥 Camera: <b>${this.rig.cyclePreset()}</b>`, 1200));
+    i.on('camreset', () => this.rig.reset(this.player.heading));
     i.on('music', () => {
       audio.setMusic(!audio.musicOn);
       this.updateAudioButtons();
@@ -212,12 +212,13 @@ export class Game {
     i.on('help', () => {
       if (this.panel.isOpen) return;
       this.helpEl.hidden = !this.helpEl.hidden;
-      this.input.enabled = this.helpEl.hidden;
+      this.input.enabled = this.rig.enabled = this.helpEl.hidden;
       if (!this.helpEl.hidden) this.helpEl.querySelector('button').focus();
     });
     i.on('escape', () => {
       if (this.panel.isOpen) this.panel.close();
       else if (!this.helpEl.hidden) i.fire('help');
+      else if (this.games.active) this.games.quit();
     });
     i.on('exit', () => this.onExit && this.onExit());
     // show the controls the first time
@@ -263,7 +264,7 @@ export class Game {
     this.updateProgress();
     audio.sfx(first ? 'visit' : 'open');
     audio.setMuffled(true);
-    this.input.enabled = false;
+    this.input.enabled = this.rig.enabled = false;
     this.input.keys.clear();
     this.justCompleted = first && this.visited.size === SECTIONS.length;
     this.panel.open(key);
@@ -277,11 +278,11 @@ export class Game {
     this.confetti();
   }
 
-  confetti() {
+  confetti(count = 90) {
     const box = document.createElement('div');
     box.className = 'confetti';
     const cols = ['#ff6f61', '#ffd166', '#6c8cff', '#2bb3a0', '#b28dff', '#ff8fb8'];
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < count; i++) {
       const p = document.createElement('i');
       p.style.cssText = `left:${Math.random() * 100}%;background:${cols[i % cols.length]};animation-delay:${Math.random() * 0.6}s;animation-duration:${2 + Math.random() * 1.5}s;transform:rotate(${Math.random() * 360}deg)`;
       box.appendChild(p);
@@ -298,21 +299,27 @@ export class Game {
     const p = this.player;
 
     // world colliders + moving NPCs + the parked bike
-    const circles = this.campus.circles.concat(this.npcs.circles);
+    const circles = this.campus.circles.concat(this.npcs.circles, this.games.circles);
     if (!p.riding) circles.push({ x: p.bike.pos.x, z: p.bike.pos.z, r: 0.5 });
-    p.update(dt, this.input.move, { boxes: this.campus.boxes, circles }, () => audio.sfx('step'));
+    // movement is relative to where the camera is looking
+    p.update(dt, this.rig.toWorld(this.input.move), { boxes: this.campus.boxes, circles }, () => audio.sfx('step'));
     this.npcs.update(dt, p, () => audio.sfx('hi'));
     this.campus.update(t, dt);
+    // mini-games pause while a panel or the help is open
+    this.games.update(this.input.enabled ? dt : 0, t, p);
 
     // which zone are we standing in?
     let zone = null;
     for (const z of ZONES) if (Math.hypot(p.pos.x - z.x, p.pos.z - z.z) < ZONE_R) zone = z;
     this.activeZone = zone;
+    this.activePad = zone ? null : this.games.padAt(p.pos);
     let prompt = '';
     const key = (k) => (isTouch ? `<b class="kbd-touch">${k === 'E' ? 'E' : '🚲'}</b>` : `<kbd>${k}</kbd>`);
     if (zone) {
       const s = SECTIONS.find((x) => x.key === zone.key);
       prompt = `${key('E')} Enter <b>${s.building}</b> · ${s.icon} ${s.title}`;
+    } else if (this.activePad) {
+      prompt = `${key('E')} ${this.games.padPrompt(this.activePad)}`;
     } else if (p.nearBike()) prompt = `${key('F')} Ride the bicycle`;
     else if (p.riding && p.speed < 0.5) prompt = `${key('F')} Get off the bicycle`;
     if (prompt !== this.lastPrompt) {
@@ -321,19 +328,13 @@ export class Game {
       this.promptEl.classList.toggle('show', !!prompt);
     }
 
-    // camera: smooth follow, pulled back a little more on the bike
-    const want = this.camOffset.clone().multiplyScalar(this.zoom * (p.riding ? 1.15 : 1));
-    this.introT = Math.min(1, this.introT + dt * 0.5);
-    const k = 1 - Math.exp(-(1.5 + this.introT * 3) * dt);
-    this.camTarget.lerp(new THREE.Vector3(p.pos.x, p.pos.y * 0.3 + 1, p.pos.z), k * 1.4);
-    this.camera.position.lerp(this.camTarget.clone().add(want), k);
-    this.camera.lookAt(this.camTarget);
+    this.rig.update(dt, p, this.campus.boxes);
 
     // keep the sun's shadow box centred on the player
     this.sun.position.copy(p.pos).add(this.sunOffset);
     this.sun.target.position.copy(p.pos);
 
-    this.minimap.draw(p, this.npcs, this.visited);
+    this.minimap.draw(p, this.npcs, this.visited, this.games.mapPoints());
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -341,6 +342,8 @@ export class Game {
     this.running = false;
     this.renderer.setAnimationLoop(null);
     this.input.dispose();
+    this.rig.dispose();
+    this.games.dispose();
     removeEventListener('resize', this.onResize);
     document.removeEventListener('visibilitychange', this.onVis);
     this.renderer.dispose();

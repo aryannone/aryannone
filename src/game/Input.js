@@ -12,7 +12,7 @@ export class Input {
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
       if (e.repeat) return;
       this.keys.add(k);
-      const map = { e: 'interact', enter: 'interact', f: 'bike', ' ': 'jump', q: 'wave', m: 'music', escape: 'escape', h: 'help', '?': 'help' };
+      const map = { e: 'interact', enter: 'interact', f: 'bike', ' ': 'jump', q: 'wave', m: 'music', escape: 'escape', h: 'help', '?': 'help', v: 'cam', r: 'camreset' };
       if (map[k]) this.fire(map[k]);
     };
     this.onKeyUp = (e) => this.keys.delete(e.key.toLowerCase());

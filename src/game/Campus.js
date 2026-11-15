@@ -58,7 +58,7 @@ function rng(seed) {
   return () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 }
 
-function makeLabel(text, color) {
+export function makeLabel(text, color) {
   const W = 1024, H = 160;
   const c = document.createElement('canvas');
   c.width = W;

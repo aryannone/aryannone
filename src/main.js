@@ -84,6 +84,7 @@ async function play() {
     const { Game } = await import('./game/Game.js');
     await new Promise((r) => requestAnimationFrame(r));
     game = new Game(app.querySelector('.game-root'), { onExit: showClassic, onProgress: setP });
+    if (import.meta.env.DEV) window.__game = game; // handy for debugging
     setP(1);
     const loading = app.querySelector('.loading');
     setTimeout(() => loading.classList.add('done'), 250);
