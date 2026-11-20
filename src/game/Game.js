@@ -128,7 +128,7 @@ export class Game {
           <div class="hud-name">🎓 ${profile.name}'s Campus</div>
           <div class="progress-label"><span>Campus explored</span><b class="progress-count"></b></div>
           <div class="progress"><span></span></div>
-          <div class="progress-icons">${SECTIONS.map((s) => `<span data-k="${s.key}" title="${s.building}: ${s.title}">${s.icon}</span>`).join('')}</div>
+          <div class="progress-icons">${SECTIONS.map((s) => `<span data-k="${s.key}" role="img" title="${s.building}: ${s.title}">${s.icon}</span>`).join('')}</div>
         </div>
       </div>
       <div class="hud-top-right">
@@ -148,8 +148,8 @@ export class Game {
         <button class="touch-btn big" data-act="interact" aria-label="Enter building">E</button>
       </div>
       <div class="help" hidden>
-        <div class="help-card">
-          <h2>How to explore</h2>
+        <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="help-title">
+          <h2 id="help-title">How to explore</h2>
           <ul>
             <li><span>${isTouch ? 'Joystick' : '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / arrows'}</span> Walk around</li>
             ${isTouch ? '' : '<li><span><kbd>Shift</kbd></span> Run</li>'}
@@ -157,12 +157,12 @@ export class Game {
             <li><span>${isTouch ? '🚲 button' : '<kbd>F</kbd>'}</span> Hop on / off the bicycle</li>
             <li><span>${isTouch ? '⤒ button' : '<kbd>Space</kbd>'}</span> Jump</li>
             ${isTouch ? '' : '<li><span><kbd>Q</kbd></span> Wave hello 👋</li>'}
-            <li><span>${isTouch ? 'Drag the screen' : 'Drag the mouse'}</span> Look around</li>
+            <li><span>${isTouch ? 'Drag the screen' : 'Drag the mouse · <kbd>J</kbd><kbd>L</kbd><kbd>I</kbd><kbd>K</kbd>'}</span> Look around</li>
             <li><span>${isTouch ? 'Pinch' : 'Mouse wheel'}</span> Zoom in / out</li>
             <li><span>${isTouch ? '🎥 button' : '<kbd>V</kbd> · <kbd>R</kbd>'}</span> ${isTouch ? 'Camera distance' : 'Camera distance · reset'}</li>
           </ul>
           <p class="muted small">Visit all 7 places to complete the campus tour! Then try the mini-games: ⭐ Star Rush, 🏁 Ring Race and ⚽ football on the sports ground.</p>
-          <button class="btn btn-primary" data-act="help-close">Let's go!</button>
+          <button class="btn btn-primary" data-act="help-close">Let’s go!</button>
         </div>
       </div>`;
     this.root.appendChild(hud);
@@ -211,10 +211,15 @@ export class Game {
     });
     i.on('help', () => {
       if (this.panel.isOpen) return;
-      this.helpEl.hidden = !this.helpEl.hidden;
-      this.input.enabled = this.rig.enabled = this.helpEl.hidden;
-      if (!this.helpEl.hidden) this.helpEl.querySelector('button').focus();
+      const opening = this.helpEl.hidden;
+      if (opening) this.helpReturn = document.activeElement;
+      this.helpEl.hidden = !opening;
+      this.input.enabled = this.rig.enabled = !opening;
+      if (opening) this.helpEl.querySelector('button').focus();
+      else if (this.helpReturn?.isConnected) this.helpReturn.focus();
     });
+    // the help dialog has a single button: keep Tab focus on it while open
+    this.helpEl.addEventListener('keydown', (e) => e.key === 'Tab' && (e.preventDefault(), this.helpEl.querySelector('button').focus()));
     i.on('escape', () => {
       if (this.panel.isOpen) this.panel.close();
       else if (!this.helpEl.hidden) i.fire('help');
@@ -242,7 +247,11 @@ export class Game {
     const n = this.visited.size, total = SECTIONS.length;
     this.hud.querySelector('.progress-count').textContent = `${n}/${total}`;
     this.hud.querySelector('.progress span').style.width = `${(n / total) * 100}%`;
-    this.hud.querySelectorAll('.progress-icons span').forEach((s) => s.classList.toggle('done', this.visited.has(s.dataset.k)));
+    this.hud.querySelectorAll('.progress-icons span').forEach((s) => {
+      const done = this.visited.has(s.dataset.k);
+      s.classList.toggle('done', done);
+      s.setAttribute('aria-label', `${s.title}, ${done ? 'visited' : 'not visited yet'}`);
+    });
   }
 
   toast(html, ms = 2600) {
@@ -328,6 +337,12 @@ export class Game {
       this.promptEl.classList.toggle('show', !!prompt);
     }
 
+    // keyboard camera: J/L turn, I/K tilt
+    if (this.input.enabled) {
+      const k = this.input.keys;
+      const turn = (k.has('l') ? 1 : 0) - (k.has('j') ? 1 : 0), tilt = (k.has('k') ? 1 : 0) - (k.has('i') ? 1 : 0);
+      if (turn || tilt) this.rig.rotate(-turn * 2.2 * dt, tilt * 1.2 * dt);
+    }
     this.rig.update(dt, p, this.campus.boxes);
 
     // keep the sun's shadow box centred on the player

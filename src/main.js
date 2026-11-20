@@ -18,12 +18,31 @@ const canPlay = (() => {
 let game = null;
 let cleanupClassic = null;
 
+// Fredoka (the rounded cartoon font) is only needed by the start screen
+// and the 3D campus, so it is loaded on demand.
+let fredoka = false;
+function loadFredoka() {
+  if (fredoka) return;
+  fredoka = true;
+  const l = document.createElement('link');
+  l.rel = 'stylesheet';
+  l.href = 'https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap';
+  document.head.appendChild(l);
+}
+
+// keep the browser bar colour in step with the page
+function setThemeColor(color) {
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m, i) => (i ? m.remove() : (m.removeAttribute('media'), (m.content = color))));
+}
+
 function setView(view) {
   const url = new URL(location.href);
   if (view) url.searchParams.set('view', view);
   else url.searchParams.delete('view');
   history.replaceState(null, '', url);
   document.body.dataset.view = view || 'start';
+  if (view !== 'classic') loadFredoka();
+  if (view !== 'classic') setThemeColor(view === 'campus' ? '#ffd2ad' : '#5d9cf5');
 }
 
 function showStart() {
@@ -32,13 +51,13 @@ function showStart() {
     <div class="start">
       <div class="start-sky"><i class="cloud c1"></i><i class="cloud c2"></i><i class="cloud c3"></i><i class="sun"></i></div>
       <div class="start-card">
-        <div class="start-badge">🎓</div>
+        <div class="start-badge" aria-hidden="true">🎓</div>
         <p class="start-kicker">Welcome to</p>
         <h1>${esc(profile.name)}'s <span>Campus</span></h1>
         <p class="start-sub">${esc(profile.tagline)}</p>
         <div class="start-actions">
-          <button class="btn btn-primary btn-big" data-go="play" ${canPlay ? '' : 'disabled'}>🎮 Explore the 3D campus</button>
-          <button class="btn btn-big" data-go="classic">📄 Classic portfolio</button>
+          <button class="btn btn-primary btn-big" data-go="play" ${canPlay ? '' : 'disabled'}><span aria-hidden="true">🎮</span> Explore the 3D campus</button>
+          <button class="btn btn-big" data-go="classic"><span aria-hidden="true">📄</span> Classic portfolio</button>
         </div>
         <p class="start-note muted small">${
           canPlay
@@ -65,9 +84,9 @@ async function play() {
   setView('campus');
   app.innerHTML = `
     <div class="game-root"></div>
-    <div class="loading">
+    <div class="loading" role="status" aria-live="polite">
       <div class="loading-card">
-        <div class="loading-bike">🚲</div>
+        <div class="loading-bike" aria-hidden="true">🚲</div>
         <h2>Opening the campus gates…</h2>
         <div class="loading-bar"><span></span></div>
       </div>
@@ -87,6 +106,7 @@ async function play() {
     if (import.meta.env.DEV) window.__game = game; // handy for debugging
     setP(1);
     const loading = app.querySelector('.loading');
+    loading.querySelector('h2').textContent = 'Welcome to campus!';
     setTimeout(() => loading.classList.add('done'), 250);
     setTimeout(() => loading.remove(), 900);
   } catch (err) {

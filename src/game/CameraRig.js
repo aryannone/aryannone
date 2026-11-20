@@ -3,7 +3,8 @@
 //  and can be orbited and zoomed.
 //   - mouse: drag to look around, wheel to zoom
 //   - touch: drag with one finger to look around, pinch to zoom
-//   - keys:  V cycles close / normal / far, R snaps back behind you
+//   - keys:  J/L turn, I/K tilt, V cycles close / normal / far,
+//            R snaps back behind you
 //  It gently swings back behind you while you move, and pulls in when a
 //  building gets between you and the camera.
 // =====================================================================
@@ -94,6 +95,13 @@ export class CameraRig {
     this.dist = PRESETS[this.preset].dist;
     this.pitch = PRESETS[this.preset].pitch;
     return ['Close', 'Normal', 'Far'][this.preset];
+  }
+
+  // orbit by an amount (keyboard look)
+  rotate(dYaw, dPitch) {
+    this.yaw += dYaw;
+    this.pitch = THREE.MathUtils.clamp(this.pitch + dPitch, MIN_PITCH, MAX_PITCH);
+    this.lastManual = this.time;
   }
 
   // snap behind the player

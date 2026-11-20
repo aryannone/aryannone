@@ -54,50 +54,68 @@ export function createFX(root) {
   const run = () => {
     ticking = false;
     const vh = innerHeight;
-    for (const s of scenes) {
-      const r = s.el.getBoundingClientRect();
-      if (r.bottom < -vh * 0.5 || r.top > vh * 1.5) continue;
-      const total = Math.max(1, r.height - vh);
-      s.fn(clamp(-r.top / total), r);
-    }
+    // read every rect first, then write, so the browser lays out only once
+    const rects = scenes.map((s) => s.el.getBoundingClientRect());
+    scenes.forEach((s, i) => {
+      const r = rects[i];
+      if (r.bottom < -vh * 0.5 || r.top > vh * 1.5) return;
+      s.fn(clamp(-r.top / Math.max(1, r.height - vh)), r);
+    });
   };
   const request = () => {
     if (!ticking) (ticking = true), requestAnimationFrame(run);
   };
-  on(window, 'scroll', request, { passive: true });
   on(window, 'resize', request);
 
-  // scroll velocity -> CSS var (used to skew the marquee)
+  // element positions are cached for pointer effects and invalidated on scroll/resize
+  let gen = 0;
+  const cache = new WeakMap();
+  const rectOf = (el) => {
+    const c = cache.get(el);
+    if (c && c.gen === gen) return c.r;
+    const r = el.getBoundingClientRect();
+    cache.set(el, { gen, r });
+    return r;
+  };
+  on(window, 'resize', () => gen++);
+
+  // scroll velocity -> CSS var (used to skew the marquee); sleeps when still
   let raf = 0;
-  if (!still) {
-    const loop = () => {
-      const y = scrollY;
-      velocity += ((y - lastY) - velocity) * 0.15;
-      lastY = y;
-      root.style.setProperty('--vel', clamp(velocity / 40, -1, 1).toFixed(3));
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    cleanups.push(() => cancelAnimationFrame(raf));
-  }
+  const loop = () => {
+    const y = scrollY;
+    velocity += ((y - lastY) - velocity) * 0.15;
+    lastY = y;
+    root.style.setProperty('--vel', clamp(velocity / 40, -1, 1).toFixed(3));
+    raf = Math.abs(velocity) > 0.05 ? requestAnimationFrame(loop) : (root.style.setProperty('--vel', '0'), 0);
+  };
+  on(window, 'scroll', () => {
+    gen++;
+    request();
+    if (!still && !raf) raf = requestAnimationFrame(loop);
+  }, { passive: true });
+  cleanups.push(() => cancelAnimationFrame(raf));
 
   if (fine() && !still) {
     // ---------- magnetic buttons ----------
     root.querySelectorAll('[data-magnetic]').forEach((el) => {
       const s = +(el.dataset.magnetic || 0.35);
       on(el, 'pointermove', (e) => {
-        const r = el.getBoundingClientRect();
+        const r = rectOf(el);
         const x = e.clientX - (r.left + r.width / 2), y = e.clientY - (r.top + r.height / 2);
         el.style.transform = `translate(${x * s}px, ${y * s}px)`;
       });
-      on(el, 'pointerleave', () => (el.style.transform = ''));
+      on(el, 'pointerleave', () => {
+        el.style.transform = '';
+        cache.delete(el);
+      });
     });
 
     // ---------- spotlight + tilt cards ----------
     root.querySelectorAll('[data-spot]').forEach((el) => {
       const tilt = el.hasAttribute('data-tilt');
+      on(el, 'pointerenter', () => cache.delete(el));
       on(el, 'pointermove', (e) => {
-        const r = el.getBoundingClientRect();
+        const r = rectOf(el);
         const x = e.clientX - r.left, y = e.clientY - r.top;
         el.style.setProperty('--mx', `${x}px`);
         el.style.setProperty('--my', `${y}px`);
@@ -120,6 +138,7 @@ export function createFX(root) {
       const t = e.target.closest?.('a, button, [data-spot], [data-cursor]');
       cur.classList.toggle('hover', !!t);
       cur.dataset.label = t?.dataset.cursor || '';
+      if (!craf) craf = requestAnimationFrame(follow);
     });
     on(document, 'pointerleave', () => cur.classList.remove('on'));
     const follow = () => {
@@ -127,15 +146,15 @@ export function createFX(root) {
       ry += (my - ry) * 0.18;
       dot.style.transform = `translate(${mx}px, ${my}px)`;
       ring.style.transform = `translate(${rx}px, ${ry}px)`;
-      craf = requestAnimationFrame(follow);
+      // stop once the ring has caught up; the next pointermove restarts it
+      craf = Math.abs(mx - rx) + Math.abs(my - ry) > 0.2 ? requestAnimationFrame(follow) : 0;
     };
-    craf = requestAnimationFrame(follow);
     cleanups.push(() => cancelAnimationFrame(craf), () => cur.remove());
 
     // ---------- hero spotlight ----------
     root.querySelectorAll('[data-spotlight]').forEach((el) =>
       on(el, 'pointermove', (e) => {
-        const r = el.getBoundingClientRect();
+        const r = rectOf(el);
         el.style.setProperty('--sx', `${((e.clientX - r.left) / r.width) * 100}%`);
         el.style.setProperty('--sy', `${((e.clientY - r.top) / r.height) * 100}%`);
       })

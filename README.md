@@ -42,7 +42,7 @@ To add a photo or résumé, put the file in the `public/` folder (e.g. `public/r
 | Enter building | `E` (on the glowing ring) | **E** button |
 | Bicycle on/off | `F` | 🚲 button |
 | Jump / Wave | `Space` / `Q` | ⤒ button |
-| Look around | Drag the mouse | Drag the screen |
+| Look around | Drag the mouse, or `J` `L` (turn) `I` `K` (tilt) | Drag the screen |
 | Zoom | Mouse wheel | Pinch |
 | Camera distance / reset | `V` / `R` | 🎥 button |
 | Music on/off | `M` | 🎵 button |

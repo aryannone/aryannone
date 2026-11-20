@@ -41,6 +41,7 @@ export class Panel {
   open(key) {
     const s = SECTIONS.find((x) => x.key === key);
     if (!s) return;
+    this.returnFocus = document.activeElement;
     this.el.querySelector('.panel-icon').textContent = s.icon;
     this.el.querySelector('.panel-kicker').textContent = s.building;
     this.el.querySelector('#panel-title').textContent = s.title;
@@ -60,6 +61,9 @@ export class Panel {
   close() {
     if (!this.isOpen) return;
     this.el.hidden = true;
+    // put keyboard focus back where it was before the panel opened
+    if (this.returnFocus?.isConnected && this.returnFocus !== document.body) this.returnFocus.focus();
+    this.returnFocus = null;
     this.onClose && this.onClose();
   }
 }
